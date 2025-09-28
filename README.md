@@ -194,3 +194,6 @@ docker run -p 5173:5173 foodfast-ui
 
 
 Mở trình duyệt: http://localhost:5173
+
+cd product-service && npm install && npm start
+cd payment-service && npm install && npm start

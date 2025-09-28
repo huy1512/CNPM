@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Microservice Test UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7f9fb;
+    }
+    .tab-btn.active {
+      background-color: #4f46e5;
+      color: white;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-start min-h-screen p-6">
+
+  <div class="w-full max-w-3xl bg-white shadow-xl rounded-xl p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Microservice Test UI</h1>
+
+    <!-- Tabs -->
+    <div class="flex mb-6 border-b">
+      <button class="tab-btn px-4 py-2 font-semibold rounded-t-lg active" onclick="switchTab('products')">📦 Product Service</button>
+      <button class="tab-btn px-4 py-2 font-semibold rounded-t-lg" onclick="switchTab('payments')">💳 Payment Service</button>
+    </div>
+
+    <!-- Product Service Tab -->
+    <div id="products" class="tab-content">
+      <h2 class="text-xl font-bold mb-4">Product Service (Port 4001)</h2>
+      <div class="space-y-4">
+        <input id="pname" type="text" placeholder="Tên sản phẩm" class="w-full px-3 py-2 border rounded-lg">
+        <input id="pprice" type="number" placeholder="Giá (VND)" class="w-full px-3 py-2 border rounded-lg">
+        <input id="pcategory" type="text" placeholder="Loại (vd: Italian)" class="w-full px-3 py-2 border rounded-lg">
+        <input id="prestaurant" type="text" placeholder="RestaurantId" class="w-full px-3 py-2 border rounded-lg">
+        <button onclick="createProduct()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg">➕ Thêm sản phẩm</button>
+      </div>
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
+        <button onclick="loadProducts()" class="mb-3 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">🔄 Refresh</button>
+        <pre id="productList" class="bg-gray-100 p-3 rounded-lg min-h-[120px] text-sm">Chưa tải sản phẩm...</pre>
+      </div>
+    </div>
+
+    <!-- Payment Service Tab -->
+    <div id="payments" class="tab-content hidden">
+      <h2 class="text-xl font-bold mb-4">Payment Service (Port 4002)</h2>
+      <div class="space-y-4">
+        <input id="orderId" type="text" class="w-full px-3 py-2 border rounded-lg">
+        <input id="amount" type="number" value="500000" class="w-full px-3 py-2 border rounded-lg">
+        <button onclick="sendPaymentRequest()" id="sendButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center">
+          <svg id="spinner" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Gửi Yêu cầu Thanh toán
+        </button>
+      </div>
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Kết quả API:</h3>
+        <pre id="apiResponse" class="bg-gray-100 p-3 rounded-lg min-h-[120px] text-sm">Chưa có yêu cầu...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------- CONFIG --------
+    const PRODUCT_SERVICE_URL = "http://localhost:4001/products";
+    const PAYMENT_SERVICE_URL = "http://localhost:4002/payments/process";
+
+    // -------- Tabs --------
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(tab).classList.remove("hidden");
+      event.target.classList.add("active");
+    }
+
+    // -------- Product Service --------
+    async function createProduct() {
+      const payload = {
+        name: document.getElementById("pname").value,
+        price: parseInt(document.getElementById("pprice").value),
+        category: document.getElementById("pcategory").value,
+        restaurantId: document.getElementById("prestaurant").value
+      };
+      try {
+        const res = await fetch(PRODUCT_SERVICE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert("✅ Tạo sản phẩm thành công!\n" + JSON.stringify(data, null, 2));
+        loadProducts();
+      } catch (err) {
+        alert("❌ Lỗi tạo sản phẩm: " + err.message);
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch(PRODUCT_SERVICE_URL);
+        const data = await res.json();
+        document.getElementById("productList").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("productList").textContent = "❌ Lỗi: " + err.message;
+      }
+    }
+
+    // -------- Payment Service --------
+    document.getElementById("orderId").value = `ORD-${Date.now()}`;
+
+    async function sendPaymentRequest() {
+      const orderId = document.getElementById("orderId").value;
+      const amount = parseInt(document.getElementById("amount").value);
+      const responseElement = document.getElementById("apiResponse");
+      const button = document.getElementById("sendButton");
+      const spinner = document.getElementById("spinner");
+
+      responseElement.textContent = "⏳ Đang gửi yêu cầu...";
+      button.disabled = true;
+      spinner.classList.remove("hidden");
+
+      const payload = { orderId, amount };
+
+      try {
+        const response = await fetch(PAYMENT_SERVICE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          responseElement.textContent = "✅ Thành công:\n" + JSON.stringify(data, null, 2);
+          document.getElementById("orderId").value = `ORD-${Date.now()}`;
+        } else {
+          responseElement.textContent = "❌ Lỗi:\n" + JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        responseElement.textContent = "🚨 Lỗi kết nối: " + err.message;
+      } finally {
+        button.disabled = false;
+        spinner.classList.add("hidden");
+      }
+    }
+  </script>
+</body>
+</html>
