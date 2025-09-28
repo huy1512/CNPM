@@ -1,0 +1,80 @@
+# docker-compose.yml
+services:
+  user-mongo:
+    image: mongo:5
+    container_name: foodfast-user-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - user-mongo-data:/data/db
+
+  user-service:
+    build: ./user-service
+    container_name: foodfast-user-service
+    ports:
+      - "4001:4001"
+    environment:
+      - MONGO_URL=mongodb://user-mongo:27017/users
+      - JWT_SECRET=secret123
+    depends_on:
+      - user-mongo
+
+  order-mongo:
+    image: mongo:5
+    container_name: foodfast-order-mongo
+    ports:
+      - "27019:27017"
+    volumes:
+      - order-mongo-data:/data/db
+
+  order-service:
+    build: ./order-service
+    container_name: foodfast-order-service
+    ports:
+      - "4003:4003"
+    environment:
+      - MONGO_URL=mongodb://order-mongo:27017/orders
+    depends_on:
+      - order-mongo
+
+  # product-service:
+  #   build: ./product-service
+  #   container_name: foodfast-product-service
+  #   ports:
+  #     - "4002:4002"
+  #   environment:
+  #     - MONGO_URL=mongodb://product-mongo:27017/products
+  #   depends_on:
+  #     - product-mongo
+  #
+  # product-mongo:
+  #   image: mongo:5
+  #   container_name: foodfast-product-mongo
+  #   ports:
+  #     - "27020:27017"
+  #   volumes:
+  #     - product-mongo-data:/data/db
+  #
+  # payment-service:
+  #   build: ./payment-service
+  #   container_name: foodfast-payment-service
+  #   ports:
+  #     - "4004:4004"
+  #   environment:
+  #     - MONGO_URL=mongodb://payment-mongo:27017/payments
+  #   depends_on:
+  #     - payment-mongo
+  #
+  # payment-mongo:
+  #   image: mongo:5
+  #   container_name: foodfast-payment-mongo
+  #   ports:
+  #     - "27021:27017"
+  #   volumes:
+  #     - payment-mongo-data:/data/db
+
+volumes:
+  user-mongo-data:
+  order-mongo-data:
+  # product-mongo-data:
+  # payment-mongo-data:
