@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 
-const paymentSchema = new mongoose.Schema({
+const PaymentSchema = new mongoose.Schema({
+  transactionId: String,
   orderId: String,
   amount: Number,
-  status: { type: String, default: "pending" }, // pending | success | failed
-  transactionId: String,
-}, { timestamps: true });
+  status: { type: String, enum: ["SUCCESS", "FAILED"] },
+  createdAt: { type: Date, default: Date.now },
+  idempotencyKey: String
+});
 
-module.exports = mongoose.model("Payment", paymentSchema);
+module.exports = mongoose.model("Payment", PaymentSchema);

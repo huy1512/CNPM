@@ -1,21 +1,18 @@
-require('dotenv').config();
-
 const express = require("express");
-const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const cors = require("cors");
-const connectDB = require("./db");
 const productRoutes = require("./routes/Product");
 
 const app = express();
-const PORT = process.env.PORT || 4002;
 
 app.use(cors());
-app.use(bodyParser.json());
-
-connectDB();
+app.use(express.json());
 
 app.use("/products", productRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Product Service running on port ${PORT}`);
-});
+mongoose.connect("mongodb://mongo:27017/products_db")
+  .then(() => {
+    console.log("✅ MongoDB connected for Product Service");
+    app.listen(4001, () => console.log("🚀 Product Service running on port 4001"));
+  })
+  .catch(err => console.error("❌ MongoDB connection error:", err));
