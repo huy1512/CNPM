@@ -1,19 +1,23 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const connectDB = require("./db");
-const paymentRoutes = require("./routes/payment");
+const mongoose = require("mongoose");
+const cors = require("cors");              // 👈 thêm dòng này
+const paymentRoutes = require("./routes/Payment");
+const { consumeOrderCreated } = require("./rabbitmq/consumer");
 
 const app = express();
-const PORT = process.env.PORT || 4004;
 
+// 👇 Cho phép tất cả origin (test nhanh UI bằng Live Server)
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-connectDB();
-
+// Router
 app.use("/payments", paymentRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Payment Service running on port ${PORT}`);
-});
+// Kết nối MongoDB
+mongoose.connect("mongodb://mongo:27017/payments_db")
+  .then(() => {
+    console.log("✅ MongoDB connected for Payment Service");
+    app.listen(4002, () => console.log("🚀 Payment Service running on port 4002"));
+    consumeOrderCreated(); // Bắt đầu lắng nghe queue
+  })
+  .catch(err => console.error("❌ MongoDB connection error:", err));

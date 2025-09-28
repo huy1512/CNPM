@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # -----------------------------------------------------
+  # 1. MongoDB (NO AUTH)
+  # -----------------------------------------------------
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # -----------------------------------------------------
+  # 2. RabbitMQ
+  # -----------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 45s
+      retries: 5
+
+  # -----------------------------------------------------
+  # 3. Payment Service
+  # -----------------------------------------------------
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: foodfast-delivery-payment-service-1
+    restart: always
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      MONGO_URI: mongodb://mongo:27017/payments_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  # -----------------------------------------------------
+  # 4. Product Service
+  # -----------------------------------------------------
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: foodfast-delivery-product-service-1
+    restart: always
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      MONGO_URI: mongodb://mongo:27017/products_db
+    depends_on:
+      mongo:
+        condition: service_started
+
+volumes:
+  mongo-data:

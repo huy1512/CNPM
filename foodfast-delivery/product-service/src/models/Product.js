@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 
-const productSchema = new mongoose.Schema({
+const ProductSchema = new mongoose.Schema({
   name: String,
   price: Number,
-  description: String,
   category: String,
-  imageUrl: String,
-}, { timestamps: true });
+  restaurantId: String,
+  createdAt: { type: Date, default: Date.now }
+});
 
-module.exports = mongoose.model("Product", productSchema);
+module.exports = mongoose.model("Product", ProductSchema);
