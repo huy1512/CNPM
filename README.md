@@ -21,7 +21,7 @@ Dự án này được thiết kế để có khả năng mở rộng, độ tin
 
 Kiến trúc tổng thể được thiết kế để đảm bảo luồng dữ liệu đi qua các thành phần một cách tối ưu và an toàn.
 
-![Kiến trúc hệ thống FoodFast Delivery](https://i.imgur.com/sY8EaXw.png)
+
 
 1.  **Client (React App):** Người dùng (Buyer/Seller/Admin) tương tác với hệ thống thông qua giao diện người dùng.
 2.  **API Gateway:** Là điểm vào duy nhất cho mọi yêu cầu. Nó chịu trách nhiệm **Xác thực (Authentication)**, **Phân quyền (Authorization - RBAC)**, giới hạn truy cập (Rate Limiting) và định tuyến request đến các service phù hợp.
