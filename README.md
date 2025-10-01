@@ -1,199 +1,100 @@
-# 🍔 FoodFast Delivery (Microservices + React UI)
+# 🍔 FoodFast Delivery - Nền tảng Sàn giao dịch Đa đối tác
 
-## 📌 Giới thiệu
-FoodFast là một ứng dụng đặt đồ ăn trực tuyến với **kiến trúc microservices**.  
-Dự án gồm:
-- **Frontend**: React + Vite
-- **Backend**: 4 dịch vụ Node.js (Express + MongoDB)
-- **Triển khai**: Docker Compose (có thể nâng cấp Kubernetes)
+Chào mừng đến với FoodFast Delivery! Đây không chỉ là một ứng dụng đặt đồ ăn thông thường, mà là một hệ thống **Sàn giao dịch đa đối tác (Multi-Vendor Marketplace)** hoàn chỉnh được xây dựng trên kiến trúc **Microservices hướng sự kiện (Event-Driven)**.
 
-
-## 📂 Cấu trúc Project
-
-### Frontend (React UI)
-<img width="590" height="755" alt="image" src="https://github.com/user-attachments/assets/f0a1ca1a-d8f2-4a83-8051-3e7570a2bdd3" />
-
-
-
-### Backend
-- **User Service** → quản lý tài khoản người dùng  
-- **Product Service** → quản lý sản phẩm (món ăn)  
-- **Order Service** → quản lý đơn hàng  
-- **Payment Service** → xử lý thanh toán  
-
-Mỗi service có MongoDB riêng → cách ly dữ liệu.
+Dự án này được thiết kế để có khả năng mở rộng, độ tin cậy cao và dễ dàng bảo trì, mô phỏng một hệ thống giao đồ ăn trong thế giới thực.
 
 ---
 
-## ⚙️ Kiến trúc hệ thống
-<img width="432" height="299" alt="image" src="https://github.com/user-attachments/assets/87dce520-8304-4006-879e-f7b749b140f3" />
+## ✨ Các Khái niệm Cốt lõi (Core Concepts)
 
+Để hiểu rõ hệ thống, hãy nắm vững các nguyên tắc thiết kế sau:
 
-- **Frontend**: React + Vite (hiển thị UI, gọi API qua Gateway)  
-- **Backend**: Node.js + Express + MongoDB  
-- **Triển khai**: Docker Compose (local) → Kubernetes (production)  
-- **API Gateway**: Nginx/Kong/Traefik (gom API, auth, rate limiting)  
-
----
-
-## 🚀 Các Service & API
-
-### 🧑 User Service
-- `POST /users` → tạo user  
-- `GET /users/:id` → lấy thông tin user  
-- `POST /auth/login` → đăng nhập  
-
-### 🍔 Product Service
-- `POST /products` → thêm sản phẩm  
-- `GET /products` → danh sách sản phẩm  
-- `GET /products/:id` → chi tiết sản phẩm  
-
-### 📦 Order Service
-- `POST /orders` → tạo đơn hàng  
-- `GET /orders/:id` → chi tiết đơn hàng  
-
-### 💳 Payment Service
-- `POST /payments` → thực hiện thanh toán  
-- `GET /payments/:id` → trạng thái thanh toán  
+* **Kiến trúc Microservices (12 services):** Hệ thống được chia thành 12 service độc lập, mỗi service chịu trách nhiệm cho một nghiệp vụ cụ thể (quản lý người dùng, sản phẩm, đơn hàng, giao hàng, v.v.).
+* **Sàn giao dịch Đa đối tác (Multi-Vendor Marketplace):** Hỗ trợ 3 vai trò chính: **Người mua (Buyer)**, **Nhà bán hàng (Seller)**, và **Quản trị viên (Admin)**. Nhà bán hàng có thể tự quản lý cửa hàng, sản phẩm và đơn hàng của riêng mình.
+* **Kiến trúc Hướng sự kiện (Event-Driven):** Các service giao tiếp với nhau một cách bất đồng bộ thông qua một **Message Broker** (như RabbitMQ/Kafka). Điều này giúp giảm sự phụ thuộc lẫn nhau (loose coupling) và tăng khả năng phục hồi của hệ thống.
+* **Mô hình Saga Pattern:** Sử dụng cho các giao dịch phức tạp liên quan đến nhiều service (ví dụ: đặt hàng và thanh toán) để đảm bảo **tính nhất quán dữ liệu (data consistency)** mà không cần dùng đến các giao dịch phân tán (distributed transactions).
 
 ---
 
-## 🐳 Docker Compose (tóm tắt)
+## ⚙️ Kiến trúc Hệ thống
 
-```yaml
-version: '3.8'
-services:
-  user-service:
-    build: ./user-service
-    ports: ["4001:4001"]
-    environment:
-      - MONGO_URL=mongodb://user-mongo:27017/users
-    depends_on: [user-mongo]
+Kiến trúc tổng thể được thiết kế để đảm bảo luồng dữ liệu đi qua các thành phần một cách tối ưu và an toàn.
 
-  product-service:
-    build: ./product-service
-    ports: ["4002:4002"]
-    environment:
-      - MONGO_URL=mongodb://product-mongo:27017/products
-    depends_on: [product-mongo]
+![Kiến trúc hệ thống FoodFast Delivery](https://i.imgur.com/sY8EaXw.png)
 
-  order-service:
-    build: ./order-service
-    ports: ["4003:4003"]
-    environment:
-      - MONGO_URL=mongodb://order-mongo:27017/orders
-    depends_on: [order-mongo]
+1.  **Client (React App):** Người dùng (Buyer/Seller/Admin) tương tác với hệ thống thông qua giao diện người dùng.
+2.  **API Gateway:** Là điểm vào duy nhất cho mọi yêu cầu. Nó chịu trách nhiệm **Xác thực (Authentication)**, **Phân quyền (Authorization - RBAC)**, giới hạn truy cập (Rate Limiting) và định tuyến request đến các service phù hợp.
+3.  **Synchronous Services (REST API):** Các service xử lý các yêu cầu cần phản hồi ngay lập tức như quản lý người dùng, sản phẩm, giỏ hàng.
+4.  **Asynchronous Services (Message Broker):** Các service xử lý các nghiệp vụ phức tạp như đặt hàng, thanh toán, điều phối giao hàng sẽ giao tiếp với nhau qua các sự kiện (events) trên Message Broker.
+5.  **Databases:** Mỗi service có một cơ sở dữ liệu riêng để đảm bảo tính độc lập và cách ly dữ liệu.
 
-  payment-service:
-    build: ./payment-service
-    ports: ["4004:4004"]
-    environment:
-      - MONGO_URL=mongodb://payment-mongo:27017/payments
-    depends_on: [payment-mongo]
+---
 
-  # MongoDB cho từng service
-  user-mongo:
-    image: mongo:5
-    volumes: [ "user_data:/data/db" ]
-  product-mongo:
-    image: mongo:5
-    volumes: [ "product_data:/data/db" ]
-  order-mongo:
-    image: mongo:5
-    volumes: [ "order_data:/data/db" ]
-  payment-mongo:
-    image: mongo:5
-    volumes: [ "payment_data:/data/db" ]
+## 🚀 12 Microservices Cốt lõi
 
-volumes:
-  user_data:
-  product_data:
-  order_data:
-  payment_data:
+Hệ thống được cấu thành từ 12 services độc lập:
 
-🖥 Frontend (React UI)
-Công nghệ
+| STT | Tên Service             | Vai trò chính                                                   |
+| :-- | :---------------------- | :--------------------------------------------------------------- |
+| 1   | **API Gateway** | Điểm truy cập duy nhất, xác thực JWT, định tuyến request.        |
+| 2   | **User Service** | Quản lý Người mua (Buyer) và Admin.                              |
+| 3   | **Seller Service** | Quản lý Nhà bán hàng/Nhà hàng (Seller/Shop).                     |
+| 4   | **Product Service** | Quản lý menu và thông tin sản phẩm của từng shop.                |
+| 5   | **Inventory Service** | Quản lý tồn kho suất ăn theo từng sản phẩm của từng shop.         |
+| 6   | **Cart Service** | Quản lý giỏ hàng của người dùng.                                 |
+| 7   | **Order Service** | Quản lý vòng đời đơn hàng, điều phối Saga, xử lý tách đơn hàng.    |
+| 8   | **Payment Service** | Xử lý các nghiệp vụ thanh toán, xác nhận giao dịch.               |
+| 9   | **Delivery Dispatcher** | Điều phối, tìm kiếm và phân công shipper/drone giao hàng.         |
+| 10  | **Delivery & GPS Service** | Quản lý quy trình giao hàng, theo dõi GPS thời gian thực.        |
+| 11  | **Message Broker** | Hệ thống hàng đợi tin nhắn (RabbitMQ/Kafka).                     |
+| 12  | **Monitoring & Logging** | Thu thập log/metrics, giám sát và cảnh báo.                       |
 
-React + Vite
+---
 
-Axios (gọi API)
+## 🌊 Các Luồng Nghiệp vụ Chính (Key Flows)
 
-React Router (navigation)
+1.  **Đăng ký & Xác thực (Onboarding):** Phân tách rõ ràng luồng đăng ký cho Người mua và Nhà bán hàng. Hệ thống sử dụng JWT để quản lý phiên làm việc và RBAC để phân quyền.
+2.  **Quản lý Sản phẩm & Tồn kho:** Nhà bán hàng có thể đăng sản phẩm, cập nhật thông tin và số lượng tồn kho. Dữ liệu được cô lập theo `shopId` để đảm bảo an toàn.
+3.  **Đặt hàng & Thanh toán (Saga Pattern):** Khi người mua đặt hàng (có thể từ nhiều shop), hệ thống sẽ:
+    * Tạm giữ (reserve) tồn kho.
+    * Kích hoạt một Saga, xuất bản sự kiện `OrderCreated`.
+    * `Payment Service` lắng nghe và xử lý thanh toán.
+    * Tùy vào kết quả thanh toán, `Order Service` sẽ xác nhận đơn hàng và trừ kho vĩnh viễn, hoặc hủy đơn và hoàn trả tồn kho.
+4.  **Vận hành & Giao hàng:**
+    * Khi đơn hàng được xác nhận, sự kiện `OrderConfirmed` được gửi đi.
+    * `Delivery Dispatcher` nhận sự kiện, tìm shipper/drone và giao nhiệm vụ cho `Delivery & GPS Service`.
+    * Người dùng có thể theo dõi vị trí đơn hàng theo thời gian thực qua WebSocket/SSE.
 
-Zustand (state management giỏ hàng)
+---
 
-Các trang chính
+## 🛠️ Công nghệ sử dụng (Tech Stack)
 
-Trang chủ → danh sách sản phẩm (Product Service)
+| Lĩnh vực            | Công nghệ                                     |
+| :------------------ | :-------------------------------------------- |
+| **Backend** | Node.js, Express.js, TypeScript               |
+| **Frontend** | React, Vite, Zustand, Axios, React Router     |
+| **Cơ sở dữ liệu** | MongoDB, PostgreSQL (tùy service)             |
+| **Hạ tầng & DevOps** | Docker, Docker Compose, Kubernetes, Nginx (API Gateway) |
+| **Message Broker** | RabbitMQ / Kafka                              |
+| **Giám sát** | Prometheus, Grafana                           |
+| **Logging** | Winston, Morgan                               |
+| **CI/CD** | GitHub Actions                                |
 
-Đăng ký/Đăng nhập → User Service
+---
 
-Giỏ hàng / Order → Order Service
+## 🚀 Bắt đầu (Getting Started)
 
-Thanh toán → Payment Service
+### 1. Yêu cầu
 
-Quản trị → thêm/sửa sản phẩm
+* [Git](https://git-scm.com/)
+* [Node.js](https://nodejs.org/) (phiên bản 18.x trở lên)
+* [Docker](https://www.docker.com/) và [Docker Compose](https://docs.docker.com/compose/)
 
-🛠 Dockerfile (React UI)
-FROM node:18-alpine
-WORKDIR /app
+### 2. Cấu hình
 
-COPY package.json package-lock.json ./
-RUN npm install
+Mỗi microservice có thể có một file `.env.example`. Hãy sao chép chúng thành `.env` và tùy chỉnh các biến môi trường nếu cần (ví dụ: port, chuỗi kết nối CSDL, secret keys).
 
-COPY . .
-EXPOSE 5173
-
-CMD ["npm", "run", "dev", "--", "--host"]
-
-📦 package.json (React UI)
-{
-  "name": "foodfast-ui",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "axios": "^1.6.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.2",
-    "zustand": "^4.5.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.3",
-    "vite": "^5.0.0"
-  }
-}
-🔒 Bảo mật & Tối ưu
-
-Auth: JWT
-
-Password: bcrypt
-
-API Gateway: gom API + rate limit
-
-Monitoring: Prometheus + Grafana
-
-Logging: Winston / Morgan
-
-CI/CD: GitHub Actions → Docker build & deploy
-
-Scale: Kubernetes (production)
-
-📜 Hướng dẫn chạy
-1️⃣ Chạy Backend
-docker-compose up --build
-
-2️⃣ Chạy Frontend (React UI)
-cd foodfast-ui
-docker build -t foodfast-ui .
-docker run -p 5173:5173 foodfast-ui
-
-
-Mở trình duyệt: http://localhost:5173
-
-cd product-service && npm install && npm start
-cd payment-service && npm install && npm start
+```bash
+# Ví dụ cho một service
+cp .env.example .env
